@@ -14,7 +14,7 @@ int main(void)
     while(1) {
         uint8_t* pBuff = UARTFetchReceivedLine();
         if (NULL != pBuff) {
-            printf((char*)pBuff);
+            //printf((char*)pBuff);
             CmdDispatch(pBuff, 0);
         }
     }

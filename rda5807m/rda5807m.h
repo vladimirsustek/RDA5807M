@@ -226,7 +226,7 @@
 /**************** Public functions: Basic operation ***********/
 uint8_t RDA5807mInit(void);
 uint8_t RDA5807mSetFreq(uint16_t freq);
-uint8_t RDA5807mSetVolume(uint8_t volume);
+uint8_t RDA5807mSetVolm(uint8_t volume);
 uint8_t RDA5807mReset(void);
 uint8_t RDA5807mMute(uint8_t mute);
 uint8_t RDA5807mGetRSSI(void);

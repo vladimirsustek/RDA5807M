@@ -126,7 +126,7 @@ uint8_t RDA5807mSetFreq(uint16_t freq) {
     return RDA5807mFN_OK;
 }
 
-uint8_t RDA5807mSetVolume(uint8_t volume) {
+uint8_t RDA5807mSetVolm(uint8_t volume) {
 
     if (volume > RDA5807mVOLUME_MAX) return RDA5807mFN_ERR;
 
