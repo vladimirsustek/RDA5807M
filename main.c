@@ -9,7 +9,7 @@ int main(void)
 
     sei();
 
-    printf("Started\n");
+    printf("Started!\n");
 
     while(1) {
         uint8_t* pBuff = UARTFetchReceivedLine();
