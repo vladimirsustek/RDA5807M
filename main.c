@@ -9,13 +9,15 @@ int main(void)
 
     sei();
 
-    printf("Started!\n");
+    printf("SYS_READY\n");
 
     while(1) {
-        uint8_t* pBuff = UARTFetchReceivedLine();
+        uint8_t lng = 0;
+        uint8_t* pBuff = UARTFetchReceivedLine(&lng);
         if (NULL != pBuff) {
-            //printf((char*)pBuff);
-            CmdDispatch(pBuff, 0);
+            printf("Lng: %d\n", lng);
+            CmdDispatch(pBuff, lng);
+            pBuff = NULL;
         }
     }
 

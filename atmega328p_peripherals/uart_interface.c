@@ -21,6 +21,9 @@
 /* Macro to substitute set bit of the UART busy line */
 #define UART_BUFF_BUSY      (!(UCSR0A & (1 << UDRE0)))
 
+
+#define DEBUG_PRINT        0
+
 /***********************************************************************/
 /*****************    Private data     *********************************/
 /***********************************************************************/
@@ -31,7 +34,8 @@ static FILE mystdout = FDEV_SETUP_STREAM(uart_putchar, NULL,_FDEV_SETUP_WRITE);
 
 static volatile int uart_lf_flag = 0;
 static volatile uint8_t inner_buffer[UART_RX_BUFF_SIZE] = {0};
-static volatile uint8_t inner_buff_i     = 0;
+static volatile uint8_t inner_buff_tail     = 0;
+static volatile uint8_t inner_buff_head    = 0;
 
 
 /***********************************************************************/
@@ -89,20 +93,13 @@ static void uart_exit_critical(void) {
  */
 ISR(USART_RX_vect){
 
-    inner_buffer[inner_buff_i] = UDR0;
+    uint8_t iUDR0 = UDR0;
 
-    if(inner_buffer[inner_buff_i] == '\n') {
-            uart_enter_critical();
-            uart_lf_flag = 1;
-    }
-
-    if(inner_buff_i < UART_RX_BUFF_SIZE - 1) {
-        inner_buff_i++;
-        }
-    else {
-        uart_enter_critical();
+    if (iUDR0 == '\n')
         uart_lf_flag = 1;
-    }
+
+    inner_buffer[inner_buff_head] = iUDR0;
+    inner_buff_head = (inner_buff_head + 1) % UART_RX_BUFF_SIZE;
 }
 
 /***********************************************************************/
@@ -151,11 +148,11 @@ void UARTinitiliaze(uint8_t isr_enable_flag) {
  *
  */
 uint8_t UARTisLFreceived(void) {
-    uint8_t result = 0;
     if(uart_lf_flag) {
-        result = uart_lf_flag;
+        uart_lf_flag = 0;
+        return 1;
     }
-    return result;
+    return 0;
 }
 /* @brief Copy content of received UART to buffer
  *
@@ -172,22 +169,45 @@ uint8_t UARTisLFreceived(void) {
  */
 uint8_t UARTcopyBuffer(uint8_t * buffer){
 
-    uart_enter_critical();
+    /* Error value */
+    uint8_t length = 0xFF;
 
-    uint8_t result = 0;
     if(buffer == NULL) {
-        return -1;
+
+        /* Return Error value */
+        return length;
     }
 
-    memcpy(buffer, (uint8_t*)inner_buffer, inner_buff_i);
-    memset((uint8_t*)inner_buffer, '\0', inner_buff_i);
-    inner_buff_i = 0;
-    uart_lf_flag = 0;
-    result = inner_buff_i;
+    if (inner_buff_head > inner_buff_tail) {
 
-    uart_exit_critical();
+#if DEBUG_PRINT
+        printf("Scenario: tail < head\n");
+#endif
+        memcpy(buffer, (uint8_t*)inner_buffer + inner_buff_tail, inner_buff_head - inner_buff_tail);
 
-    return result;
+        length = inner_buff_head - inner_buff_tail;
+#if DEBUG_PRINT
+        printf("Tail: %d, Head %d, Length: %d\n", inner_buff_tail, inner_buff_head, length);
+#endif
+    }
+    else {
+#if DEBUG_PRINT
+        printf("Scenario: tail >= head\n");
+#endif
+                                                        // 16               8
+        memcpy(buffer, (uint8_t*)inner_buffer + inner_buff_tail, UART_RX_BUFF_SIZE - inner_buff_tail);
+
+        memcpy(buffer + (UART_RX_BUFF_SIZE - inner_buff_tail + 1), (uint8_t*)inner_buffer, inner_buff_head);
+
+        length = (UART_RX_BUFF_SIZE - inner_buff_tail) + inner_buff_head;
+#if DEBUG_PRINT
+        printf("Tail: %d, Head %d, Length: %d\n", inner_buff_tail, inner_buff_head, length);
+#endif
+    }
+
+    inner_buff_tail = inner_buff_head;
+
+    return length;
 }
 
 /* @brief
@@ -195,16 +215,21 @@ uint8_t UARTcopyBuffer(uint8_t * buffer){
  * @return
  *
  */
-uint8_t* UARTFetchReceivedLine(void) {
+uint8_t* UARTFetchReceivedLine(uint8_t* pLength) {
 
-    static uint8_t uart_received[UART_RX_BUFF_SIZE] = {0};
-
-    uint8_t* pBuff = NULL;
+    uint8_t * retP = NULL;
+    static uint8_t outer_buffer[UART_RX_BUFF_SIZE] = {0};
 
     if(UARTisLFreceived()) {
-        UARTcopyBuffer(uart_received);
-        pBuff = uart_received;
+        uart_enter_critical();
+        *pLength = UARTcopyBuffer(outer_buffer);
+#if DEBUG_PRINT
+        printf("Outer buffer: %s\n", outer_buffer);
+#endif
+        retP = outer_buffer;
+        uart_exit_critical();
     }
-    return pBuff;
+
+    return retP;
 }
 

@@ -1,0 +1,55 @@
+RING BUFFER ILLUSTRATIONS (h = head, t = tail)
+
+if (h > t) // t == 0 
+ 0   1   2   3   4   5
+-------------------------
+| D | A | T | A | ? | ?  |
+-------------------------
+  t               h
+
+
+memcpy(destination, buffer + tail, head - tail);
+
+
+  0   1   2   3   4   5
+-------------------------
+| ? | D | A | T | A | ? |
+-------------------------
+      t               h
+	  
+	  
+if (h > t) // t != 0
+memcpy(destination, buffer + tail, head - tail);
+
+  0   1   2   3   4   5
+-------------------------
+| ? | ? | D | A | T | A |
+-------------------------
+  h       t           
+	  
+
+  0   1   2   3   4   5
+-------------------------
+| A | ? | ? | D | A | T |
+-------------------------
+      h       t
+if (h < t)
+
+  0   1   2   3   4   5
+-------------------------
+| A | T | A | ? | ? | D |
+-------------------------
+              h       t
+if (h < t)
+
+memcpy(destination, buffer + tail, BUFF_SIZE - tail + 1);
+memcpy(destination + (BUFF_SIZE - tail + 1), buffer, head);
+
+
+if (h === t)
+
+  0   1   2   3   4   5
+-------------------------
+| ? | ? | /n| ? | ? | ? |
+-------------------------
+          t   h       

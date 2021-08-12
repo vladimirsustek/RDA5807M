@@ -3,7 +3,6 @@
 
 #include "../atmega328p_peripherals/twi.h"
 
-
 /*********** RDA5807m Hardware - register defines *************/
 /* Fixed address of the RDA5807m chip*/
 #define RDA5807M_I2C_ADR	    (uint8_t)(0x10)
@@ -220,32 +219,38 @@
 #define RDA5807mRD_REG_LNG     ((uint8_t)(6))
 
 /***********RDA5807m Module - function returns ****************/
-#define RDA5807mFN_OK		    (uint8_t)(0)
-#define RDA5807mFN_ERR		    (uint8_t)(1)
+#define RDA5807M_FN_OK		    ((uint16_t)(0x0))
+#define RDA5807M_FN_ER		    ((uint16_t)(0xFFFF))
+#define RDA5807mNO_DATA         ((uint16_t)(0x0))
+
+/***************RDA5807m Module - public macros ***************/
+#define rda5807mPackData(result, data) (uint32_t)(((uint32_t)(result) << 16) | (uint32_t)(data))
+#define rda5807mUnPackReturn(result)   (uint16_t)(((result) & 0xFFFF0000) >> 16)
+#define rda5807mUnPackData(result)     (uint16_t)((result) & 0x0000FFFF)
 
 /**************** Public functions: Basic operation ***********/
-uint8_t RDA5807mInit(void);
-uint8_t RDA5807mSetFreq(uint16_t freq);
-uint8_t RDA5807mSetVolm(uint8_t volume);
-uint8_t RDA5807mReset(void);
-uint8_t RDA5807mMute(uint8_t mute);
-uint8_t RDA5807mGetRSSI(void);
+void RDA5807mInit(void);
+uint16_t RDA5807mSetFreq(uint16_t freq);
+uint16_t RDA5807mSetVolm(uint8_t volume);
+void RDA5807mReset(void);
+uint16_t RDA5807mMute(uint8_t mute);
+uint16_t RDA5807mGetRSSI(void);
 
 /**************** Public functions: Basic operation ***********/
 
-uint8_t RDA5807mGetRDSR(void);
-uint8_t RDA5807mGetRDSS(void);
-uint8_t RDA5807mIsChannelStereo(void);
-uint8_t RDA5807mIsChannelStation(void);
+uint16_t RDA5807mGetRDSR(void);
+uint16_t RDA5807mGetRDSS(void);
+uint16_t RDA5807mIsChannelStereo(void);
+uint16_t RDA5807mIsChannelStation(void);
 uint16_t RDA5807mGetRDSBlockA(void);
 uint16_t RDA5807mGetRDSBlockB(void);
 uint16_t RDA5807mGetRDSBlockC(void);
 uint16_t RDA5807mGetRDSBlockD(void);
 
-uint8_t RDA5807mGetErrBlockA(void);
-uint8_t RDA5807mGetErrBlockB(void);
+uint16_t RDA5807mGetErrBlockA(void);
+uint16_t RDA5807mGetErrBlockB(void);
 
-uint8_t RDA5807mClearRDSFIFO(void);
+void RDA5807mClearRDSFIFO(void);
 
 
 

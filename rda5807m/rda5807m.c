@@ -1,8 +1,11 @@
 #include "rda5807m.h"
 
+/* If this define is 1, RDS settings across all
+   functions are applied .. otherwise not */
 #define RDS_USED            1
 
-#define swapbytes(byte) ((((byte) & 0x00FF) << 8) | (((byte) & 0xFF00) >> 8))
+/* byte endianity solving macro for 16b variable*/
+#define swapbytes(byte)     ((((byte) & 0x00FF) << 8) | (((byte) & 0xFF00) >> 8))
 
 static uint16_t RDA5807mGetReg0x0A(void) {
 
@@ -11,9 +14,7 @@ static uint16_t RDA5807mGetReg0x0A(void) {
     twi_readFromSlave(RDA5807M_I2C_ADR, (uint8_t*)&RDA5807MReg, RDA5807M_REG_SIZE);
     RDA5807MReg = swapbytes(RDA5807MReg);
 
-    printf("0x0A: 0x%04x\n", RDA5807MReg);
-
-    return RDA5807MReg;
+    return (uint32_t)RDA5807MReg;
 }
 
 static uint16_t RDA5807mGetReg0x0B(void) {
@@ -23,12 +24,13 @@ static uint16_t RDA5807mGetReg0x0B(void) {
     twi_readFromSlave(RDA5807M_I2C_ADR, (uint8_t*)&RDA5807MReg, RDA5807M_REG_SIZE*2);
     RDA5807MReg[1] = swapbytes(RDA5807MReg[1]);
 
-    printf("0x0B: 0x%04x\n", RDA5807MReg[1]);
-
-    return RDA5807MReg[1];
+    return (uint32_t)RDA5807MReg[1];
 }
 
-uint8_t RDA5807mMute(uint8_t mute) {
+uint16_t RDA5807mMute(uint8_t mute) {
+
+    if (mute != 0 && mute != 1)
+        return RDA5807M_FN_ER;
 
     uint16_t RDA5807Register;
     /* For Mute only 1st register needed to be accessed */
@@ -37,7 +39,7 @@ uint8_t RDA5807mMute(uint8_t mute) {
 #else
     RDA5807Register = (1 << DHIZ) | (1 << BASS) | (1 << RCLK_DIR_MODE) | (1 << ENABLE);
 #endif
-    if (!mute) {
+    if (0 == mute) {
         RDA5807Register |= (1 << DMUTE);
     }
 
@@ -45,11 +47,11 @@ uint8_t RDA5807mMute(uint8_t mute) {
 
     twi_writeToSlave(RDA5807M_I2C_ADR, (uint8_t*)&RDA5807Register, RDA5807M_REG_SIZE);
 
-    return RDA5807mFN_OK;
+    return RDA5807M_FN_OK;
 
 }
 
-uint8_t RDA5807mReset(void) {
+void RDA5807mReset(void) {
 
     /* For Mute only 1st register needed to be accessed */
 
@@ -61,11 +63,10 @@ uint8_t RDA5807mReset(void) {
 
     twi_writeToSlave(RDA5807M_I2C_ADR, (uint8_t*)&RDA5807Register, RDA5807M_REG_SIZE);
 
-    return RDA5807mFN_OK;
 
 }
 
-uint8_t RDA5807mInit(void) {
+void RDA5807mInit(void) {
 
     /* For complete initialization, 6 (out of 7) registers must be written */
     uint16_t RDA5807Registers[6] = {0};
@@ -97,24 +98,24 @@ uint8_t RDA5807mInit(void) {
 
     twi_writeToSlave(RDA5807M_I2C_ADR, (uint8_t*)RDA5807Registers, RDA5807M_REG_SIZE*6);
 
-	return RDA5807mFN_OK;
-
 }
 
-uint8_t RDA5807mSetFreq(uint16_t freq) {
+uint16_t RDA5807mSetFreq(uint16_t freq) {
+
+    if (RDA5807mWW_FREQ_MIN > freq || RDA5807mWW_FREQ_MAX < freq)
+        return RDA5807M_FN_ER;
 
     /* For frequency change 2nd register must be accessed */
     uint16_t RDA5807Registers[2] = {0};
 
-    if (RDA5807mWW_FREQ_MIN > freq ||
-        RDA5807mWW_FREQ_MAX < freq)
-            return RDA5807mFN_ERR;
+    if (RDA5807mWW_FREQ_MIN > freq || RDA5807mWW_FREQ_MAX < freq)
+        return RDA5807M_FN_ER;
 #if RDS_USED
     RDA5807Registers[0] = (1 << DHIZ)| (1 << DMUTE) | (1 << BASS)| (1 << RCLK_DIR_MODE) | (1 << RDS_EN) | (1 << ENABLE);
 #else
     RDA5807Registers[0] = (1 << DHIZ)| (1 << DMUTE) | (1 << BASS)| (1 << RCLK_DIR_MODE)| (1 << ENABLE);
 #endif
-    freq -= 760;
+    freq -= RDA5807mWW_FREQ_MIN/10;
     freq <<= 6;
     RDA5807Registers[1] = freq | (1 << TUNE) | (1 << BAND_1);
 
@@ -123,13 +124,13 @@ uint8_t RDA5807mSetFreq(uint16_t freq) {
 
     twi_writeToSlave(RDA5807M_I2C_ADR, (uint8_t*)RDA5807Registers, 4);
 
-    return RDA5807mFN_OK;
+    return RDA5807M_FN_OK;
 }
 
-uint8_t RDA5807mSetVolm(uint8_t volume) {
+uint16_t RDA5807mSetVolm(uint8_t volume) {
 
-    if (volume > RDA5807mVOLUME_MAX) return RDA5807mFN_ERR;
-
+    if (volume > RDA5807mVOLUME_MAX)
+        return RDA5807M_FN_ER;
     /* To set volume, 4th register must be accessed,
        so 4x16b write transaction is needed */
     uint16_t RDA5807Registers[4];
@@ -154,10 +155,10 @@ uint8_t RDA5807mSetVolm(uint8_t volume) {
 
     twi_writeToSlave(RDA5807M_I2C_ADR, (uint8_t*)RDA5807Registers, 8);
 
-    return RDA5807mFN_OK;
+    return RDA5807M_FN_OK;
 }
 
-uint8_t RDA5807mGetRSSI(void) {
+uint16_t RDA5807mGetRSSI(void) {
 
     uint16_t RDA5807MReg;
 
@@ -169,35 +170,37 @@ uint8_t RDA5807mGetRSSI(void) {
     /* Shifting value to be within 6:0 */
     RDA5807MReg >>= RSSI_0;
 
-    return (uint8_t)RDA5807MReg;
+    return RDA5807MReg;
+
 }
 
-uint8_t RDA5807mGetRDSR(void) {
+uint16_t RDA5807mGetRDSR(void) {
 
     uint16_t RDA5807MReg = RDA5807mGetReg0x0A();
 
-    return ((RDA5807MReg & (1 << RDSR)) >> (RDSR));
+    return (RDA5807MReg & (1 << RDSR)) >> (RDSR);
 }
 
-uint8_t RDA5807mGetRDSS(void) {
+uint16_t RDA5807mGetRDSS(void) {
 
     uint16_t RDA5807MReg = RDA5807mGetReg0x0A();
 
-    return ((RDA5807MReg & (1 << RDSS)) >> (RDSS));
+    return (RDA5807MReg & (1 << RDSS)) >> (RDSS);
+
 }
 
-uint8_t RDA5807misChannelStereo(void) {
+uint16_t RDA5807misChannelStereo(void) {
 
     uint16_t RDA5807MReg = RDA5807mGetReg0x0A();
 
-    return ((RDA5807MReg & (1 << ST)) >> (ST));
+    return (RDA5807MReg & (1 << ST)) >> (ST);
 }
 
-uint8_t RDA5807mIsChannelStation(void) {
+uint16_t RDA5807mIsChannelStation(void) {
 
     uint16_t RDA5807MReg = RDA5807mGetReg0x0B();
 
-    return ((RDA5807MReg & (1 << ST)) >> (ST));
+    return (RDA5807MReg & (1 << FM_TRUE)) >> (FM_TRUE);
 }
 
 uint16_t RDA5807mGetRDSBlockA(void) {
@@ -244,7 +247,7 @@ uint16_t RDA5807mGetRDSBlockD(void) {
     return RDA5807MReg;
 }
 
-uint8_t RDA5807mGetErrBlockA(void) {
+uint16_t RDA5807mGetErrBlockA(void) {
 
     uint16_t RDA5807MReg;
 
@@ -253,10 +256,10 @@ uint8_t RDA5807mGetErrBlockA(void) {
     RDA5807MReg &= (1 << BLERA_1) | (1 << BLERA_0);
     RDA5807MReg >>= BLERA_0;
 
-    return (uint8_t)RDA5807MReg;
+    return RDA5807MReg;
 }
 
-uint8_t RDA5807mGetErrBlockB(void) {
+uint16_t RDA5807mGetErrBlockB(void) {
 
     uint16_t RDA5807MReg;
 
@@ -265,11 +268,11 @@ uint8_t RDA5807mGetErrBlockB(void) {
     RDA5807MReg &= (1 << BLERB_1) | (1 << BLERB_0);
     RDA5807MReg >>= BLERB_0;
 
-    return (uint8_t)RDA5807MReg;
+    return RDA5807MReg;
 }
 
 
-uint8_t RDA5807mClearRDSFIFO(void) {
+void RDA5807mClearRDSFIFO(void) {
 
     uint16_t RDA5807Registers[3] = {0};
 	/* Register REG_ADR_02 */
@@ -287,7 +290,5 @@ uint8_t RDA5807mClearRDSFIFO(void) {
     for(uint8_t idx = 0; idx < 3; idx++) RDA5807Registers[idx] = swapbytes(RDA5807Registers[idx]);
 
     twi_writeToSlave(RDA5807M_I2C_ADR, (uint8_t*)RDA5807Registers, 6);
-
-    return RDA5807mFN_OK;
 
 }

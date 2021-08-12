@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <stdio.h>
 
 #define CMD_DELIMITER_LNG   ((uint8_t)(1))
 #define CMD_DELIMITER       ((uint8_t)('_'))
@@ -16,10 +17,11 @@
 
 #define CMD_ARG_OFFSET      ((uint8_t)(CMD_PLATFORM_LNG + CMD_NAME_LNG + CMD_METHOD_LNG + CMD_DELIMITER_LNG*2))
 
-#define CMD_RET_OK          ((uint8_t)(0u))
-#define CMD_RET_ERR         ((uint8_t)(255u))
+#define CMD_RET_OK          ((uint16_t)(0x0))
+#define CMD_RET_ERR         ((uint16_t)(0xFFFF))
+#define CMD_RET_UKN         ((uint16_t)(0xF0F0))
 
-typedef uint8_t (*pfn_u8_cpuc8cu8)(const uint8_t* const, const uint8_t lng);
+typedef uint16_t (*pfn_u8_cpuc8cu8)(const uint8_t* const, const uint8_t lng);
 
 typedef struct CmdDisp {
 
