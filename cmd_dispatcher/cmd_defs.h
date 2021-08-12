@@ -5,15 +5,18 @@
 #include <string.h>
 #include <stdio.h>
 
-#define CMD_DELIMITER_LNG   ((uint8_t)(1))
+#define CMD_EOL_LNG         ((uint8_t)(1u))
+#define CMD_DELIMITER_LNG   ((uint8_t)(1u))
 #define CMD_DELIMITER       ((uint8_t)('_'))
 
-#define CMD_PLATFORM_LNG    ((uint8_t)(0))
+#define CMD_PLATFORM_LNG    ((uint8_t)(0u))
 
-#define CMD_NAME_LNG        ((uint8_t)(4))
-#define CMD_METHOD_LNG      ((uint8_t)(2))
+#define CMD_NAME_LNG        ((uint8_t)(4u))
+#define CMD_METHOD_LNG      ((uint8_t)(2u))
 
-#define CMD_ARG_LNG         ((uint8_t)(5))
+#define CMD_ARG1_LNG        ((uint8_t)(1u))
+#define CMD_ARG2_LNG        ((uint8_t)(2u))
+#define CMD_ARG5_LNG        ((uint8_t)(5u))
 
 #define CMD_ARG_OFFSET      ((uint8_t)(CMD_PLATFORM_LNG + CMD_NAME_LNG + CMD_METHOD_LNG + CMD_DELIMITER_LNG*2))
 

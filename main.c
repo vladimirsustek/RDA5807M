@@ -2,22 +2,29 @@
 
 int main(void)
 {
-    UARTinitiliaze(1);
+    /* variables for CmdDispatch service */
+    uint8_t rxStrlng;
+    uint8_t* rxStrBuff = NULL;
+
+    /* Initialize peripherals*/
+    UARTinitiliaze(UART_ISR_MODE);
     tim_tick_initialize();
     gpio_initialize();
     twi_init();
 
+    /* Enable interrupts */
     sei();
 
+    /* printf redirected to UART in uart_interface.c*/
     printf("SYS_READY\n");
 
     while(1) {
-        uint8_t lng = 0;
-        uint8_t* pBuff = UARTFetchReceivedLine(&lng);
-        if (NULL != pBuff) {
-            printf("Lng: %d\n", lng);
-            CmdDispatch(pBuff, lng);
-            pBuff = NULL;
+        /* Check whether any new string has arrived (UART) */
+        rxStrBuff = UARTFetchReceivedLine(&rxStrlng);
+        if (NULL != rxStrBuff) {
+            /* If so and is terminated by <LF>,
+               process it as command*/
+            CmdDispatch(rxStrBuff, rxStrlng);
         }
     }
 

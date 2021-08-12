@@ -27,30 +27,6 @@ static uint16_t RDA5807mGetReg0x0B(void) {
     return (uint32_t)RDA5807MReg[1];
 }
 
-uint16_t RDA5807mMute(uint8_t mute) {
-
-    if (mute != 0 && mute != 1)
-        return RDA5807M_FN_ER;
-
-    uint16_t RDA5807Register;
-    /* For Mute only 1st register needed to be accessed */
-#if RDS_USED
-    RDA5807Register = (1 << DHIZ) | (1 << BASS) | (1 << RCLK_DIR_MODE) | (1 << RDS_EN) | (1 << ENABLE);
-#else
-    RDA5807Register = (1 << DHIZ) | (1 << BASS) | (1 << RCLK_DIR_MODE) | (1 << ENABLE);
-#endif
-    if (0 == mute) {
-        RDA5807Register |= (1 << DMUTE);
-    }
-
-    RDA5807Register = swapbytes(RDA5807Register);
-
-    twi_writeToSlave(RDA5807M_I2C_ADR, (uint8_t*)&RDA5807Register, RDA5807M_REG_SIZE);
-
-    return RDA5807M_FN_OK;
-
-}
-
 void RDA5807mReset(void) {
 
     /* For Mute only 1st register needed to be accessed */
@@ -158,6 +134,30 @@ uint16_t RDA5807mSetVolm(uint8_t volume) {
     return RDA5807M_FN_OK;
 }
 
+uint16_t RDA5807mMute(uint8_t mute) {
+
+    if (mute != 0 && mute != 1)
+        return RDA5807M_FN_ER;
+
+    uint16_t RDA5807Register;
+    /* For Mute only 1st register needed to be accessed */
+#if RDS_USED
+    RDA5807Register = (1 << DHIZ) | (1 << BASS) | (1 << RCLK_DIR_MODE) | (1 << RDS_EN) | (1 << ENABLE);
+#else
+    RDA5807Register = (1 << DHIZ) | (1 << BASS) | (1 << RCLK_DIR_MODE) | (1 << ENABLE);
+#endif
+    if (0 == mute) {
+        RDA5807Register |= (1 << DMUTE);
+    }
+
+    RDA5807Register = swapbytes(RDA5807Register);
+
+    twi_writeToSlave(RDA5807M_I2C_ADR, (uint8_t*)&RDA5807Register, RDA5807M_REG_SIZE);
+
+    return RDA5807M_FN_OK;
+
+}
+
 uint16_t RDA5807mGetRSSI(void) {
 
     uint16_t RDA5807MReg;
@@ -189,7 +189,7 @@ uint16_t RDA5807mGetRDSS(void) {
 
 }
 
-uint16_t RDA5807misChannelStereo(void) {
+uint16_t RDA5807mIsChannelStereo(void) {
 
     uint16_t RDA5807MReg = RDA5807mGetReg0x0A();
 

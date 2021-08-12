@@ -26,14 +26,15 @@
 
 #define RX_ISR_ENAB             (uint8_t)(1u)
 #define RX_ISR_DISAB            (uint8_t)(0u)
-#define UART_RX_BUFF_SIZE       (uint8_t)(16)
+#define UART_RX_BUFF_SIZE       (uint8_t)(16u)
 
+#define UART_ISR_MODE           (uint8_t)(1u)
 /***********************************************************************/
 /*****************    Public functions    ******************************/
 /***********************************************************************/
 
 void UARTinitiliaze(uint8_t isr_enable_flag);
 uint8_t UARTisLFreceived(void);
-uint8_t UARTcopyBuffer(uint8_t * buffer);
+uint8_t UARTcopyBuffer(uint8_t * buffer, uint8_t lng);
 uint8_t* UARTFetchReceivedLine(uint8_t* pLength);
 #endif // UART_INTERFACE_H_INCLUDED

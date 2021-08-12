@@ -100,6 +100,8 @@ ISR(USART_RX_vect){
 
     inner_buffer[inner_buff_head] = iUDR0;
     inner_buff_head = (inner_buff_head + 1) % UART_RX_BUFF_SIZE;
+    inner_buffer[inner_buff_head] = 0;
+
 }
 
 /***********************************************************************/
@@ -167,40 +169,42 @@ uint8_t UARTisLFreceived(void) {
  * potential overflow passing sufficient buffer.
  *
  */
-uint8_t UARTcopyBuffer(uint8_t * buffer){
+uint8_t UARTcopyBuffer(uint8_t * buffer, uint8_t lng){
 
     /* Error value */
     uint8_t length = 0xFF;
 
-    if(buffer == NULL) {
-
-        /* Return Error value */
+    if(buffer == NULL || lng <= UART_RX_BUFF_SIZE) {
+        /* Return Error value when null pointer
+           or buffer length is too small*/
         return length;
     }
 
     if (inner_buff_head > inner_buff_tail) {
 
 #if DEBUG_PRINT
+        /* printf redirected to UART in uart_interface.c*/
         printf("Scenario: tail < head\n");
 #endif
         memcpy(buffer, (uint8_t*)inner_buffer + inner_buff_tail, inner_buff_head - inner_buff_tail);
 
         length = inner_buff_head - inner_buff_tail;
 #if DEBUG_PRINT
+        /* printf redirected to UART in uart_interface.c*/
         printf("Tail: %d, Head %d, Length: %d\n", inner_buff_tail, inner_buff_head, length);
 #endif
     }
     else {
 #if DEBUG_PRINT
+        /* printf redirected to UART in uart_interface.c*/
         printf("Scenario: tail >= head\n");
 #endif
-                                                        // 16               8
         memcpy(buffer, (uint8_t*)inner_buffer + inner_buff_tail, UART_RX_BUFF_SIZE - inner_buff_tail);
-
-        memcpy(buffer + (UART_RX_BUFF_SIZE - inner_buff_tail + 1), (uint8_t*)inner_buffer, inner_buff_head);
+        memcpy(buffer + (UART_RX_BUFF_SIZE - inner_buff_tail), (uint8_t*)inner_buffer, inner_buff_head);
 
         length = (UART_RX_BUFF_SIZE - inner_buff_tail) + inner_buff_head;
 #if DEBUG_PRINT
+        /* printf redirected to UART in uart_interface.c*/
         printf("Tail: %d, Head %d, Length: %d\n", inner_buff_tail, inner_buff_head, length);
 #endif
     }
@@ -218,12 +222,15 @@ uint8_t UARTcopyBuffer(uint8_t * buffer){
 uint8_t* UARTFetchReceivedLine(uint8_t* pLength) {
 
     uint8_t * retP = NULL;
-    static uint8_t outer_buffer[UART_RX_BUFF_SIZE] = {0};
+
+    /* +1 bigger for 0x0 appending - end of string for printf */
+    static uint8_t outer_buffer[UART_RX_BUFF_SIZE + 1];
 
     if(UARTisLFreceived()) {
         uart_enter_critical();
-        *pLength = UARTcopyBuffer(outer_buffer);
+        *pLength = UARTcopyBuffer(outer_buffer, UART_RX_BUFF_SIZE + 1);
 #if DEBUG_PRINT
+        /* printf redirected to UART in uart_interface.c*/
         printf("Outer buffer: %s\n", outer_buffer);
 #endif
         retP = outer_buffer;
