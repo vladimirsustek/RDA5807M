@@ -209,6 +209,8 @@ uint8_t UARTcopyBuffer(uint8_t * buffer, uint8_t lng){
 #endif
     }
 
+    /* For formal printf string termination */
+    buffer[length] = 0u;
     inner_buff_tail = inner_buff_head;
 
     return length;
