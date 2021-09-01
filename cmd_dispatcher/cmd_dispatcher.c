@@ -43,7 +43,7 @@ uint16_t CmdDispatch(const uint8_t* const pStrCmd, const uint8_t lng) {
         }
     }
     /* printf redirected to UART in uart_interface.c*/
-    printf("%sRET = 0x%04x\n", pStrCmd, result);
+    printf("<< %s  >> RET = 0x%04x\n", pStrCmd, result);
 
     return result;
 }
