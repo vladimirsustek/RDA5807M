@@ -7,7 +7,7 @@
 /* Fixed address of the RDA5807m chip*/
 #define RDA5807M_I2C_ADR	    (uint8_t)(0x10)
 #define RDA5807M_REG_SIZE       (uint8_t)(2u)
-/* Only 'write' considered register without write posibility */
+/* Only write marked register without real write possibility */
 #define CHIP_NAME_ADR 		    (uint8_t)(0x00)
 /**************************************************************/
 

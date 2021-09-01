@@ -209,8 +209,6 @@ uint8_t UARTcopyBuffer(uint8_t * buffer, uint8_t lng){
 #endif
     }
 
-    /* For formal printf string termination */
-    buffer[length] = 0u;
     inner_buff_tail = inner_buff_head;
 
     return length;
@@ -231,6 +229,8 @@ uint8_t* UARTFetchReceivedLine(uint8_t* pLength) {
     if(UARTisLFreceived()) {
         uart_enter_critical();
         *pLength = UARTcopyBuffer(outer_buffer, UART_RX_BUFF_SIZE + 1);
+        /* For formal printf string termination */
+        outer_buffer[*pLength] = '\0';
 #if DEBUG_PRINT
         /* printf redirected to UART in uart_interface.c*/
         printf("Outer buffer: %s\n", outer_buffer);
