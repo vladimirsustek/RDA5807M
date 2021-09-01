@@ -61,11 +61,11 @@ void RDA5807mInit(void) {
     RDA5807Registers[2]= 0u;
 #endif
 	/* Register REG_ADR_05 */
-	RDA5807Registers[3] = (1 << INT_MODE) | (1 << SEEK_MODE_1)  | (1 << SEEKTH_1)| (1 << SEEKTH_0) | (1 << LNA_PORT_SEL_1) | (1 << LNA_ICSEL_1) | (1 << VOLUME_0);
+	RDA5807Registers[3] = (1 << LNA_PORT_SEL_1) | (1 << LNA_ICSEL_1);
     /* Register REG_ADR_06 */
-	RDA5807Registers[4] = (1 << OPEN_MODE_1) | (1 << OPEN_MODE_0);
+    RDA5807Registers[4] = 0u;
     /* Register REG_ADR_07 */
-	RDA5807Registers[5] = (1 << TH_SOFRBLEND_4) | (1 << MODE_65M_50M) | (1 << SEEK_TH_OLD_2) | (1 << SOFTBLEND_EN);
+	RDA5807Registers[5] = (1 << TH_SOFRBLEND_4) | (1 << SEEK_TH_OLD_2) | (1 << SOFTBLEND_EN);
 
     for(uint8_t idx = 0; idx < 6; idx++) {
 
@@ -84,15 +84,25 @@ uint16_t RDA5807mSetFreq(uint16_t freq) {
     /* For frequency change 2nd register must be accessed */
     uint16_t RDA5807Registers[2] = {0};
 
-    if (RDA5807mWW_FREQ_MIN > freq || RDA5807mWW_FREQ_MAX < freq)
-        return RDA5807M_FN_ER;
 #if RDS_USED
     RDA5807Registers[0] = (1 << DHIZ)| (1 << DMUTE) | (1 << BASS)| (1 << RCLK_DIR_MODE) | (1 << RDS_EN) | (1 << ENABLE);
 #else
     RDA5807Registers[0] = (1 << DHIZ)| (1 << DMUTE) | (1 << BASS)| (1 << RCLK_DIR_MODE)| (1 << ENABLE);
 #endif
-    freq -= RDA5807mWW_FREQ_MIN/10;
-    freq <<= 6;
+
+    /* Channel (frequency select) is based on:
+       SPACE - Channel Spacing (SPACE_0, SPACE_1)
+       CHAN - Input offset of base frequency
+       BAND - Baseband frequency (BAND_1, BAND_0)
+
+       Freq = SPACE(kHz)*CHAN + BAND
+       e.g. Freq = 132 + 760 = 89.2MHz
+    */
+
+    freq -= RDA5807mWW_FREQ_MIN;
+    freq /= 10;
+    freq <<= CHAN_0;
+
     RDA5807Registers[1] = freq | (1 << TUNE) | (1 << BAND_1);
 
     RDA5807Registers[0] = swapbytes(RDA5807Registers[0]);
